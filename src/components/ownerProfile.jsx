@@ -23,7 +23,7 @@ export default function OwnerProfile() {
         const token = localStorage.getItem("token");
         if (token && ownerId) {
             try {
-                const response = await fetch(`http://localhost:5000/api/owners/${ownerId}`, {
+                const response = await fetch(`${process.env.REACT_APP_API_URL}/api/owners/${ownerId}`, {
                     method: "GET",
                     headers: {
                         "Authorization": `Bearer ${token}`,
@@ -53,7 +53,7 @@ export default function OwnerProfile() {
         const token = localStorage.getItem("token");
         if (token) {
             try {
-                const response = await fetch(`http://localhost:5000/api/owners/update/${ownerId}`, {
+                const response = await fetch(`${process.env.REACT_APP_API_URL}/api/owners/update/${ownerId}`, {
                     method: "PUT",
                     headers: {
                         "Authorization": `Bearer ${token}`,
@@ -89,7 +89,7 @@ export default function OwnerProfile() {
         formData.append("avatar", file);
     
         try {
-            const response = await fetch(`http://localhost:5000/api/owners/upload-avatar/${ownerId}`, {
+            const response = await fetch(`${process.env.REACT_APP_API_URL}/api/owners/upload-avatar/${ownerId}`, {
                 method: "POST",
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -125,7 +125,7 @@ export default function OwnerProfile() {
             <div className="profile-header">
                 <div className="profile-image-container">
                     <img
-                        src={`http://localhost:5000${owner.avatar}`}
+                        src={`${process.env.REACT_APP_API_URL}${owner.avatar}`}
                         alt="Profile"
                         className="profile-avatar"
                         onClick={() => fileInputRef.current.click()}

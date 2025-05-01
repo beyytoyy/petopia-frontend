@@ -10,29 +10,42 @@ import { Dropdown } from "primereact/dropdown";
 import { useAuth } from "./utils/auth";
 import axios from "axios";
 import "./css/VetAppointments.css";
-import { AiOutlineConsoleSql } from "react-icons/ai";
-import { QrReader } from "react-qr-reader";
 
 const PatientManagement = () => {
   const { role, clinicId } = useAuth();
   const [appointments, setAppointments] = useState([]);
   const [filteredAppointments, setFilteredAppointments] = useState([]);
-  const [selectedAppointment, setSelectedAppointment] = useState(null);
-  const [editDialog, setEditDialog] = useState(false);
-  const toast = React.useRef(null);
-  const [qrDialog, setQrDialog] = useState(false);
+  const [toast] = useState(React.createRef());
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedStatus, setSelectedStatus] = useState(null);
+  const [selectedPetType, setSelectedPetType] = useState(null);
+  const [isAddDialogVisible, setIsAddDialogVisible] = useState(false);
+  const [newAppointment, setNewAppointment] = useState({
+    ownerName: "",
+    petName: "",
+    petType: "",
+    services: "",
+    date: null,
+    medicalConcern: [],
+  });
+  const [selectedOwnerId, setSelectedOwnerId] = useState(null);
+  const [selectedPetId, setSelectedPetId] = useState(null);
+  const [selectedServiceId, setSelectedServiceId] = useState(null);
   const [selectedService, setSelectedService] = useState(null);
   const [serviceOptions, setServiceOptions] = useState([]); 
-
-  const statusOptions = [
-    { label: "Pending", value: "Pending" },
-    { label: "Confirmed", value: "Confirmed" },
-    { label: "In Progress", value: "In Progress" },
-    { label: "Ready for Pickup", value: "Ready for Pickup" },
-  ];  
-
+  const petTypeOptions = [
+    { label: "Dog", value: "Dog" },
+    { label: "Cat", value: "Cat" },
+    { label: "Bird", value: "Bird" },
+    { label: "Fish", value: "Fish" },
+    { label: "Rabbit", value: "Rabbit" },
+    { label: "Hamster", value: "Hamster" },
+    { label: "Guinea Pig", value: "Guinea Pig" },
+    { label: "Reptile", value: "Reptile" },
+    { label: "Ferret", value: "Ferret" },
+    { label: "Turtle", value: "Turtle" },
+    { label: "Horse", value: "Horse" },
+    { label: "Other", value: "Other" },
+  ];
 
   useEffect(() => {
     fetchAppointments();
@@ -40,37 +53,37 @@ const PatientManagement = () => {
   }, [clinicId, role]);
 
   useEffect(() => {
-    filterAppointments(); // Filter appointments whenever appointments or selectedStatus or selectedService changes
-  }, [appointments, searchTerm, selectedStatus, selectedService]);
-
+    filterAppointments();
+  }, [appointments, searchTerm, selectedPetType]);
 
   const fetchAppointments = async () => {
     if (role !== "admin" && !clinicId) {
       console.warn("❌ clinicId is null, skipping API call.");
-      return; // Stop the function if there's no clinicId for non-admins
+      return;
     }
   
     try {
       const url =
         role === "admin"
-          ? `http://localhost:5000/api/appointments/` // Fetch all appointments
-          : `http://localhost:5000/api/appointments/clinics/${clinicId}`; // Fetch only clinic-specific ones
+          ? `${process.env.REACT_APP_API_URL}/api/appointments/`
+          : `${process.env.REACT_APP_API_URL}/api/appointments/clinics/${clinicId}`;
   
-      console.log("🔍 Fetching appointments from:", url);
-      
-      
       const response = await axios.get(url);
-      const filteredAppointments = response.data.filter((appt) => {
-        const status = appt.status ? appt.status.toLowerCase() : "";
-        return (
-          status === "pending" || 
-          status === "confirmed" || 
-          status === "in-progress" || 
-          status === "ready-for-pickup"
-        );
-      });        
+      const filteredAppointments = response.data.filter(
+        (appointment) => appointment.status === "Completed"
+      );
+
+      const uniquePets = new Set();
+      const uniqueAppointments = filteredAppointments.filter((appointment) => {
+        const petId = appointment.pet_id._id;
+        if (!uniquePets.has(petId)) {
+          uniquePets.add(petId);
+          return true;
+        }
+        return false;
+      });
   
-      setAppointments(filteredAppointments);
+      setAppointments(uniqueAppointments);
     } catch (error) {
       console.error("❌ Error fetching appointments:", error);
       toast.current?.show({
@@ -81,19 +94,43 @@ const PatientManagement = () => {
     }
   };
 
+  const filterAppointments = () => {
+    let filtered = [...appointments];
+  
+    if (searchTerm) {
+      const lowercasedSearchTerm = searchTerm.toLowerCase();
+      filtered = filtered.filter((appt) => {
+        const petName = appt.petDetails?.toLowerCase() || "";
+        const ownerName = appt.ownerName?.toLowerCase() || "";
+        return (
+          petName.includes(lowercasedSearchTerm) ||
+          ownerName.includes(lowercasedSearchTerm)
+        );
+      });
+    }
+  
+    if (selectedPetType) {
+      filtered = filtered.filter(
+        (appt) => appt.pet_id?.type === selectedPetType
+      );
+    }
+  
+    setFilteredAppointments(filtered);
+  };
+
   const fetchServices = async () => {
     try {
       const url =
         role === "admin"
-          ? `http://localhost:5000/api/services` // Fetch all services for admin
-          : `http://localhost:5000/api/services/clinic/${clinicId}`; // Fetch services only for this clinic
+          ? `${process.env.REACT_APP_API_URL}/api/services`
+          : `${process.env.REACT_APP_API_URL}/api/services/clinic/${clinicId}`;
   
       const response = await axios.get(url);
       const services = response.data;
   
       const formattedServices = services.map(service => ({
-        label: service.name,   // 💬 Still using name for dropdown
-        value: service.name    // 🔥 value is service.name not id!
+        label: service.name,
+        value: service._id // Use the ObjectId here
       }));
   
       setServiceOptions(formattedServices);
@@ -107,197 +144,69 @@ const PatientManagement = () => {
     }
   };
 
-  const filterAppointments = () => {
-    let filtered = [...appointments];
-  
-    // Filter by search term
-    if (searchTerm) {
-      const lowercasedSearchTerm = searchTerm.toLowerCase();
-      filtered = filtered.filter((appt) => {
-        const petName = appt.petDetails?.toLowerCase() || "";
-        const ownerName = appt.ownerName?.toLowerCase() || "";
-        const serviceName = appt.service_id?.name?.toLowerCase() || "";
-        return (
-          petName.includes(lowercasedSearchTerm) ||
-          ownerName.includes(lowercasedSearchTerm) ||
-          serviceName.includes(lowercasedSearchTerm)
-        );
-      });
-    }
-  
-    // Filter by status
-    if (selectedStatus) {
-      filtered = filtered.filter(
-        (appt) => appt.status.toLowerCase() === selectedStatus.toLowerCase()
-      );
-    }
-  
-    // Filter by selected service (now by NAME)
-    if (selectedService) {
-      filtered = filtered.filter(
-        (appt) => appt.service_id?.name === selectedService
-      );
-    }
-  
-    // Sort by date
-    const today = new Date();
-    filtered.sort((a, b) => {
-      const dateA = new Date(a.date);
-      const dateB = new Date(b.date);
-      const isTodayA = dateA.toDateString() === today.toDateString();
-      const isTodayB = dateB.toDateString() === today.toDateString();
-      if (isTodayA && !isTodayB) return -1;
-      if (!isTodayA && isTodayB) return 1;
-      return dateA - dateB;
-    });
-  
-    setFilteredAppointments(filtered);
-  };
-  
-
-  const showToast = (severity, summary, detail) => {
-    toast.current.show({ severity, summary, detail, life: 3000 });
-  };
-
-  const updateAppointmentStatus = async (id, status) => {
-    try {
-      const updateData = { status };
-
-      if (status === "Confirmed") {
-        updateData.confirmedAt = new Date();
-        updateData.completedAt = null;
-        updateData.rejectedAt = null;
-      } else if (status === "Completed") {
-        updateData.completedAt = new Date();
-        updateData.confirmedAt = null;
-        updateData.rejectedAt = null;
-
-        // Append medical_concern to pet's medical_history
-        const medicalConcern = selectedAppointment.medical_concern; // Get the medical concern from the selected appointment
-        const petId = selectedAppointment.pet_id; // Get the pet ID from the selected appointment
-
-        // Update the pet's medical history
-        await axios.put(`http://localhost:5000/api/pets/update/${petId}`, {
-          medical_history: medicalConcern // Append the medical concern
-        });
-      } else if (status === "Cancelled") {
-        updateData.rejectedAt = new Date();
-        updateData.confirmedAt = null;
-        updateData.completedAt = null;
-      }
-
-      await axios.put(`http://localhost:5000/api/appointments/update/${id}`, updateData);
-      showToast("success", "Updated", `Appointment marked as ${status}.`);
-      fetchAppointments();
-    } catch (error) {
-      showToast("error", "Error", "Failed to update appointment status.");
-    }
-  };
-
-  const handleEdit = (appointment) => {
-    setSelectedAppointment({
-      ...appointment,
-      originalStatus: appointment.status,
-      status: "",
-    });
-    setEditDialog(true);
-  };
-
-  const handleUpdate = async (id, status, date, time, notes = 0, price = "") => {
-    if (!id) {
-        console.error("❌ No ID provided for update!");
+  const handleAddAppointment = async () => {
+    if (!selectedOwnerId || !selectedPetId || !selectedServiceId || !newAppointment.date) {
+        alert("Please fill out all required fields.");
         return;
     }
 
     try {
-        console.log("🔵 Preparing appointment update...", { id, status, date, time, notes, price });
+        const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/appointments/clinic-book`, {
+            owner_id: selectedOwnerId._id || selectedOwnerId,
+            pet_id: selectedPetId,
+            clinic_id: clinicId,
+            service_id: selectedServiceId,
+            date: newAppointment.date.toISOString(),
+            status: "Confirmed",
+            medical_concern: newAppointment.medicalConcern, // Ensure this is set correctly
+        });
 
-        // Prepare the request payload
-        const updateData = { status };
-
-        if (date) {
-          const updatedDate = new Date(date);
-          if (time) {
-              const [hours, minutes] = time.split(":").map(Number);
-              updatedDate.setHours(hours);
-              updatedDate.setMinutes(minutes);
-          }
-          updateData.date = updatedDate; // Ensure this is a valid date
-        }
-
-        if (time) {
-            updateData.time = time; // Keep time as a separate field if needed
-        }
-
-        if (notes) {
-            updateData.notes = notes || "";
-        }
-
-        if (price) {
-          updateData.price = price || ""; // Ensure price is included
-      }
-
-        // Send the update request to the backend
-        const response = await axios.put(`http://localhost:5000/api/appointments/update/${id}`, updateData);
-
-        console.log("🟢 Response from backend:", response.data);
-        showToast("success", "Updated", "Appointment updated successfully.");
-        
-        fetchAppointments(); // Refresh the data
-        setEditDialog(false); // Close dialog
+        setAppointments([...appointments, response.data.appointment]);
+        setIsAddDialogVisible(false);
+        setNewAppointment({
+            ownerName: "",
+            petName: "",
+            petType: "",
+            services: "",
+            date: null,
+            medicalConcern: [], // Reset this field
+        });
+        setSelectedOwnerId(null);
+        setSelectedPetId(null);
+        setSelectedServiceId(null);
     } catch (error) {
-        console.error("🔴 Error updating appointment:", error);
-        showToast("error", "Error", "Failed to update appointment.");
+        console.error("Error adding appointment:", error);
+        alert("Error adding appointment. Please try again.");
     }
-};  
-
-  const dateTemplate = (rowData) => {
-    return new Date(rowData.date).toLocaleString();
-  };
-
-  const formatStatus = (rowData) => {
-    return (
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-start" }}>
-            <span className={`status-circle ${rowData.status.toLowerCase()}`} style={{ marginRight: "8px" }} />
-            <span>{rowData.status}</span>
-        </div>
-    );
 };
 
-  const actionTemplate = (rowData) => {
+  const actionAppointmentTemplate = (rowData) => {
     return (
       <div className="action-buttons">
-        <Button icon="pi pi-pencil" className="edit-btn" onClick={() => handleEdit(rowData)} />
-
-        {rowData.status === "Pending" && (
-          <>
-            <Button icon="pi pi-check" className="accept-btn" onClick={() => updateAppointmentStatus(rowData._id, "Confirmed")} />
-            <Button icon="pi pi-times" className="delete-btn" onClick={() => updateAppointmentStatus(rowData._id, "Cancelled")} />
-          </>
-        )}
-
-        {rowData.status === "Confirmed" && (
-          <>
-            <Button icon="pi pi-check" className="accept-btn" onClick={() => updateAppointmentStatus(rowData._id, "In-progress")} />
-            <Button icon="pi pi-times" className="delete-btn" disabled />
-          </>
-        )}
-        {rowData.status === "In-progress" && (
-          <>
-            <Button icon="pi pi-check" className="accept-btn" onClick={() => updateAppointmentStatus(rowData._id, "Ready-for-pickup")} />
-            <Button icon="pi pi-times" className="delete-btn" disabled />
-          </>
-        )}
-        {rowData.status === "Ready-for-pickup" && (
-          <>
-            <Button icon="pi pi-check" className="accept-btn" onClick={() => updateAppointmentStatus(rowData._id, "Completed")} />
-            <Button icon="pi pi-times" className="delete-btn" disabled />
-          </>
-        )}
+        <Button 
+          icon="pi pi-calendar" 
+          onClick={() => {
+            setSelectedOwnerId(rowData.owner_id);
+            setSelectedPetId(rowData.pet_id);
+            setIsAddDialogVisible(true);
+          }} 
+          style={{border: "none", color: "white", backgroundColor: "#14976f"}}
+        />
       </div>
     );
   };
-  
+
+  const medicalHistoryTemplate = (rowData) => {
+    const medicalHistory = rowData.pet_id?.medical_history; // Access the medical history
+    return (
+      <span>
+        {Array.isArray(medicalHistory) && medicalHistory.length > 0
+          ? medicalHistory.join(', ') 
+          : 'No medical history'} 
+      </span>
+    );
+  };
+
   return (
     <div className="vet-appointments-container">
       <Toast ref={toast} position="bottom-right" />
@@ -310,50 +219,7 @@ const PatientManagement = () => {
       <span className="datatable-line"></span>
 
       <div className="flex-container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-
-      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-        <div style={{ display: "flex", alignItems: "center" }}>
-          <FilterIcon size={24} />
-        </div>
-        <div style={{ position: "relative", flexGrow: 1 }}>
-          <Dropdown
-            value={selectedStatus}
-            options={statusOptions}
-            onChange={(e) => setSelectedStatus(e.value)}
-            placeholder="Filter by Status"
-            className="p-inputtext-sm"
-            showClear
-            style={{
-              height: "45px", 
-              padding: "0 10px", 
-              fontSize: "14px", 
-              minWidth: "150px", 
-              marginBottom: "10px"
-            }}
-          />
-        </div>
-
-        {/* Add gap between the two filters */}
-        <div style={{ position: "relative", flexGrow: 1 }}>
-          <Dropdown
-            value={selectedService}
-            options={serviceOptions}
-            onChange={(e) => setSelectedService(e.value)}
-            placeholder="Filter by Services"
-            className="p-inputtext-sm"
-            showClear
-            style={{
-              height: "45px", 
-              padding: "0 10px", 
-              fontSize: "14px",
-              minWidth: "150px", 
-              marginBottom: "10px"
-            }}
-          />
-        </div>
-
         <div style={{ position: "relative", flexGrow: 1, minWidth: "250px" }}>
-          {/* Search Icon inside input */}
           <SearchIcon size={20} style={{ 
               position: "absolute", 
               top: "40%", 
@@ -361,238 +227,102 @@ const PatientManagement = () => {
               transform: "translateY(-50%)", 
               color: "#6c757d" 
           }} />
+          <InputText
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+            placeholder="Search by Owner or Pet Name"
+            style={{ 
+                width: "100%", 
+                paddingLeft: "3.5rem", 
+                maxWidth: "400px"
+            }}
+          />
+        </div>
 
-          {/* Input Text with padding to the left */}
-            <InputText 
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-                placeholder="Search"
-                style={{ 
-                    width: "100%", 
-                    paddingLeft: "3.5rem", 
-                    maxWidth: "400px"
-                }}
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <div style={{ display: "flex", alignItems: "center" }}>
+            <FilterIcon size={24} />
+          </div>
+
+          <div style={{ position: "relative", flexGrow: 1 }}>
+            <Dropdown
+              value={selectedPetType}
+              options={petTypeOptions}
+              onChange={(e) => setSelectedPetType(e.value)}
+              placeholder="Filter by Pet Type"
+              className="p-inputtext-sm"
+              showClear
+              style={{
+                height: "45px", 
+                padding: "0 10px", 
+                fontSize: "14px",
+                minWidth: "150px", 
+                marginBottom: "10px"
+              }}
             />
+          </div>
         </div>
       </div>
 
-      <Button
-        label="Scan QR Code"
-        icon="pi pi-qrcode"
-        onClick={() => setQrDialog(true)}
-        className="custom-qr-btn"
-      />
-    </div>
-
       <DataTable value={filteredAppointments} className="datatable" paginator rows={20}>
         <Column field="ownerName" header="Owner Name" />
-        <Column field="petDetails" header="Pet Details" />
-        <Column field="service_id.name" header="Service Availed" />
-        <Column field="medical_concern" header="Medical Concern" />
-        <Column field="date" header="Appointment Date" body={dateTemplate} />
-        <Column field="status" header="Status" body={formatStatus} />
-        <Column header="Actions" body={actionTemplate} />
+        <Column field="pet_id.name" header="Pet Name" />
+        <Column field="pet_id.type" header="Pet Type"/>
+        <Column field="pet_id.breed" header="Pet Breed" />
+        <Column header="Medical History" body={medicalHistoryTemplate} />
+        <Column header="Actions" body={actionAppointmentTemplate} />
       </DataTable>
 
       <Dialog
-        visible={editDialog}
-        header="Edit Appointment"
-        onHide={() => setEditDialog(false)}
+        visible={isAddDialogVisible}
+        header="Add Appointment"
+        onHide={() => setIsAddDialogVisible(false)}
         className="p-fluid edit-appointment-dialog"
         style={{ width: "400px" }}
       >
-        {selectedAppointment && (
-          <div className="p-dialog-content">
-            {/* Status Dropdown */}
-            <div className="p-field">
-              <label>Status</label>
-              <select
-                value={selectedAppointment?.status || ""}
-                onChange={(e) =>
-                  setSelectedAppointment({
-                    ...selectedAppointment,
-                    status: e.target.value,
-                  })
-                }
-              >
-                  <option value="" disabled>
-                    Select Status
-                  </option>
-                {selectedAppointment?.originalStatus === "Pending" && (
-                  <>
-                    <option value="Confirmed">Confirmed</option>
-                    <option value="Cancelled">Cancelled</option>
-                  </>
-                )}
-                {selectedAppointment?.originalStatus === "Confirmed" && (
-                  <>
-                  <option value="In-progress">In-progress</option>
-                  <option value="Ready-for-pickup">Ready-for-pickup</option>
-                  </>
-                )}
-                {selectedAppointment?.originalStatus === "In-progress" && (
-                  <>
-                  <option value="Ready-for-pickup">Ready-for-pickup</option>
-                  </>
-                )}
-                {(selectedAppointment?.originalStatus === "Ready-for-pickup") && (
-                  <option value="Completed">Completed</option>
-                )}
-              </select>
-            </div>
-
-            {/* Date Picker */}
-            <div className="p-field">
-              <label>Date</label>
-              <input
-                type="date"
-                value={
-                  selectedAppointment?.date
-                    ? new Date(selectedAppointment.date).toISOString().split("T")[0]
-                    : ""
-                }
-                onChange={(e) => {
-                  const newDate = new Date(e.target.value);
-                  const existingTime = new Date(selectedAppointment.date);
-                  newDate.setHours(existingTime.getHours(), existingTime.getMinutes());
-                  setSelectedAppointment({
-                    ...selectedAppointment,
-                    date: newDate.toISOString(),
-                  });
-                }}
-              />
-            </div>
-
-            {/* Time Picker */}
-            <div className="p-field">
-              <label>Time</label>
-              <input
-                type="time"
-                value={
-                  selectedAppointment?.date
-                    ? new Date(selectedAppointment.date)
-                        .toLocaleTimeString("en-GB", {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                          hour12: false,
-                        })
-                    : ""
-                }
-                onChange={(e) => {
-                  const [hours, minutes] = e.target.value.split(":");
-                  const newDate = new Date(selectedAppointment.date);
-                  newDate.setHours(hours, minutes);
-                  setSelectedAppointment({
-                    ...selectedAppointment,
-                    date: newDate.toISOString(),
-                  });
-                }}
-              />
-            </div>
-
-            <div className="p-field">
-              <label>Price</label>
-              <div className="peso-input-container">
-                <span className="peso-sign">₱</span>
-                <input
-                  value={selectedAppointment?.price || ""}
-                  onChange={(e) =>
-                    setSelectedAppointment({
-                      ...selectedAppointment,
-                      price: e.target.value,
-                    })
-                  }
-                />
-              </div>
-            </div>
-
-
-            {/* Notes Input */}
-            <div className="p-field">
-              <label>Notes</label>
-              <input
-                rows={2}
-                value={selectedAppointment?.notes || ""}
-                onChange={(e) =>
-                  setSelectedAppointment({
-                    ...selectedAppointment,
-                    notes: e.target.value,
-                  })
-                }
-              />
-            </div>
-          </div>
-        )}
-
-        <div className="p-dialog-footer">
-          <Button label="Cancel" className="p-button-cancel" onClick={() => setEditDialog(false)} />
-          <Button
-            label="Update"
-            className={`p-button-confirm ${!selectedAppointment?.status ? "disabled-btn" : ""}`}
-            onClick={() =>
-              handleUpdate(
-                selectedAppointment._id,
-                selectedAppointment.status,
-                selectedAppointment.date,
-                selectedAppointment.time,
-                selectedAppointment.notes,
-                selectedAppointment.price
-              )
-            }
-            disabled={!selectedAppointment?.status}
-          />
-        </div>  
-      </Dialog>
-
-      <Dialog
-        visible={qrDialog}
-        header="Scan QR Code"
-        onHide={() => setQrDialog(false)}
-        style={{ width: "100%", maxWidth: "500px"}}
-      >
-        <div style={{ position: "relative",  width: "100%", maxWidth: '500px', height: "100%", maxHeight: '500px' }}>
-          {/* QR Reader */}
-          <QrReader
-            constraints={{ facingMode: "environment" }}
-            onResult={(result, error) => {
-              if (result) {
-                const scannedText = result.getText?.();
-                console.log("✅ QR Code Scanned:", scannedText);
-
-                if (scannedText) {
-                  if (scannedText.startsWith("http://") || scannedText.startsWith("https://")) {
-                    setQrDialog(false);
-                    window.location.href = scannedText;
-                  } else {
-                    console.warn("Scanned data is not a valid URL:", scannedText);
-                  }
-                }
-              }
-            }}
-            style={{ width: "100%", height: "100%" }}
-          />
-
-          {/* Overlays to darken everything except the scan box */}
-          <div className="overlay-top" />
-          <div className="overlay-bottom" />
-          <div className="overlay-left" />
-          <div className="overlay-right" />
-
-          {/* The visible scan box in the center */}
-          <div className="scan-box">
-            <span className="corner top-left" />
-            <span className="corner top-right" />
-            <span className="corner bottom-left" />
-            <span className="corner bottom-right" />
-          </div>
-
-          {/* Animated green line */}
-          <div className="green-laser" />
+        <div className="p-field">
+          <label>Owner</label>
+          <InputText value={`${selectedOwnerId?.firstname || ''} ${selectedOwnerId?.lastname || ''}`.trim()} readOnly className="w-full"/>
         </div>
+        <div className="p-field">
+          <label>Pet</label>
+          <InputText value={selectedPetId?.name || ''} readOnly className="w-full"/>
+        </div>
+        <div className="p-field">
+            <label>Medical Concerns</label>
+            <InputText 
+                value={newAppointment.medicalConcern.join(', ')} // Join array for display
+                onChange={(e) => setNewAppointment({ 
+                    ...newAppointment, 
+                    medicalConcern: e.target.value.split(',').map(item => item.trim()) // Split input into array
+                })} 
+                placeholder="Enter medical concern"
+                className="w-full"
+            />
+        </div>
+        <div className="p-field">
+          <label>Service</label>
+          <Dropdown 
+            value={selectedServiceId} 
+            options={serviceOptions} 
+            onChange={(e) => setSelectedServiceId(e.value)} 
+            placeholder="Select a Service" 
+            className="w-full"
+          />
+        </div>
+        <div className="p-field">
+          <label>Date</label>
+          <InputText 
+            type="date" 
+            value={newAppointment.date ? newAppointment.date.toISOString().split('T')[0] : ''} 
+            onChange={(e) => setNewAppointment({ ...newAppointment, date: new Date(e.target.value) })} 
+            className="w-full"
+          />
+        </div>
+        <Button label="Add Appointment" className="addapp-button" onClick={handleAddAppointment} /> 
       </Dialog>
-
     </div>
   );
 };
 
-export default PatientManagement; 
+export default PatientManagement;

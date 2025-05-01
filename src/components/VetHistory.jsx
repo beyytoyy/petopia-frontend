@@ -36,8 +36,8 @@
       try {
         const url =
           role === "admin"
-            ? `http://localhost:5000/api/appointments/`
-            : `http://localhost:5000/api/appointments/clinics/${clinicId}`;
+            ? `${process.env.REACT_APP_API_URL}/api/appointments/`
+            : `${process.env.REACT_APP_API_URL}/api/appointments/clinics/${clinicId}`;
 
         const response = await axios.get(url);
 
@@ -65,8 +65,8 @@
       try {
         const url =
           role === "admin"
-            ? `http://localhost:5000/api/services` // Fetch all services for admin
-            : `http://localhost:5000/api/services/clinic/${clinicId}`; // Fetch services only for this clinic
+            ? `${process.env.REACT_APP_API_URL}/api/services` // Fetch all services for admin
+            : `${process.env.REACT_APP_API_URL}/api/services/clinic/${clinicId}`; // Fetch services only for this clinic
     
         const response = await axios.get(url);
         const services = response.data;

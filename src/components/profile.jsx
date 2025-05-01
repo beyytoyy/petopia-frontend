@@ -45,7 +45,7 @@ export default function UserProfilePage() {
         const token = localStorage.getItem("token");
         if (token && ownerId) {
             try {
-                const response = await fetch(`http://localhost:5000/api/owners/${ownerId}`, {
+                const response = await fetch(`${process.env.REACT_APP_API_URL}/api/owners/${ownerId}`, {
                     method: "GET",
                     headers: {
                         "Authorization": `Bearer ${token}`,
@@ -69,7 +69,7 @@ export default function UserProfilePage() {
         const token = localStorage.getItem("token");
         if (token) {
             try {
-                const response = await fetch(`http://localhost:5000/api/pets/${ownerId}`, {
+                const response = await fetch(`${process.env.REACT_APP_API_URL}/api/pets/${ownerId}`, {
                     method: "GET",
                     headers: {
                         "Authorization": `Bearer ${token}`,
@@ -91,7 +91,7 @@ export default function UserProfilePage() {
         const token = localStorage.getItem("token");
         if (token && ownerId) {
             try {
-                const response = await fetch(`http://localhost:5000/api/appointments/${ownerId}`, {
+                const response = await fetch(`${process.env.REACT_APP_API_URL}/api/appointments/${ownerId}`, {
                     method: "GET",
                     headers: {
                         "Authorization": `Bearer ${token}`,
@@ -127,7 +127,7 @@ export default function UserProfilePage() {
         const token = localStorage.getItem("token");
         if (token) {
             try {
-                const response = await fetch(`http://localhost:5000/api/owners/update/${ownerId}`, {
+                const response = await fetch(`${process.env.REACT_APP_API_URL}/api/owners/update/${ownerId}`, {
                     method: "PUT",
                     headers: {
                         "Authorization": `Bearer ${token}`,
@@ -168,7 +168,7 @@ export default function UserProfilePage() {
         const token = localStorage.getItem("token");
         if (token && ownerId) {
             try {
-                const response = await fetch("http://localhost:5000/api/pets/register", {
+                const response = await fetch(`${process.env.REACT_APP_API_URL}/api/pets/register`, {
                     method: "POST",
                     headers: {
                         "Authorization": `Bearer ${token}`,
@@ -212,7 +212,7 @@ export default function UserProfilePage() {
         const token = localStorage.getItem("token");
         if (token) {
             try {
-                const response = await fetch(`http://localhost:5000/api/pets/delete/${rowData._id}`, {
+                const response = await fetch(`${process.env.REACT_APP_API_URL}/api/pets/delete/${rowData._id}`, {
                     method: "DELETE",
                     headers: {
                         "Authorization": `Bearer ${token}`,
@@ -236,7 +236,7 @@ export default function UserProfilePage() {
         const token = localStorage.getItem("token");
         if (token && pet._id) {
             try {
-                const response = await fetch(`http://localhost:5000/api/pets/update/${pet._id}`, {
+                const response = await fetch(`${process.env.REACT_APP_API_URL}/api/pets/update/${pet._id}`, {
                     method: "PUT",
                     headers: {
                         "Authorization": `Bearer ${token}`,

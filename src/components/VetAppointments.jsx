@@ -53,8 +53,8 @@ const VetAppointments = () => {
     try {
       const url =
         role === "admin"
-          ? `http://localhost:5000/api/appointments/` // Fetch all appointments
-          : `http://localhost:5000/api/appointments/clinics/${clinicId}`; // Fetch only clinic-specific ones
+          ? `${process.env.REACT_APP_API_URL}/api/appointments/` // Fetch all appointments
+          : `${process.env.REACT_APP_API_URL}/api/appointments/clinics/${clinicId}`; // Fetch only clinic-specific ones
   
       console.log("🔍 Fetching appointments from:", url);
       
@@ -85,8 +85,8 @@ const VetAppointments = () => {
     try {
       const url =
         role === "admin"
-          ? `http://localhost:5000/api/services` // Fetch all services for admin
-          : `http://localhost:5000/api/services/clinic/${clinicId}`; // Fetch services only for this clinic
+          ? `${process.env.REACT_APP_API_URL}/api/services` // Fetch all services for admin
+          : `${process.env.REACT_APP_API_URL}/api/services/clinic/${clinicId}`; // Fetch services only for this clinic
   
       const response = await axios.get(url);
       const services = response.data;
@@ -161,38 +161,18 @@ const VetAppointments = () => {
 
   const updateAppointmentStatus = async (id, status) => {
     try {
-      const updateData = { status };
+        // Prepare the update data for the appointment
+        const updateData = { status };
 
-      if (status === "Confirmed") {
-        updateData.confirmedAt = new Date();
-        updateData.completedAt = null;
-        updateData.rejectedAt = null;
-      } else if (status === "Completed") {
-        updateData.completedAt = new Date();
-        updateData.confirmedAt = null;
-        updateData.rejectedAt = null;
-
-        // Append medical_concern to pet's medical_history
-        const medicalConcern = selectedAppointment.medical_concern; // Get the medical concern from the selected appointment
-        const petId = selectedAppointment.pet_id; // Get the pet ID from the selected appointment
-
-        // Update the pet's medical history
-        await axios.put(`http://localhost:5000/api/pets/update/${petId}`, {
-          medical_history: medicalConcern // Append the medical concern
-        });
-      } else if (status === "Cancelled") {
-        updateData.rejectedAt = new Date();
-        updateData.confirmedAt = null;
-        updateData.completedAt = null;
-      }
-
-      await axios.put(`http://localhost:5000/api/appointments/update/${id}`, updateData);
-      showToast("success", "Updated", `Appointment marked as ${status}.`);
-      fetchAppointments();
+        // Update the appointment status
+        await axios.put(`${process.env.REACT_APP_API_URL}/api/appointments/update/${id}`, updateData);
+        showToast("success", "Updated", `Appointment marked as ${status}.`);
+        fetchAppointments();
     } catch (error) {
-      showToast("error", "Error", "Failed to update appointment status.");
+        console.error("Error updating appointment status:", error);
+        showToast("error", "Error", "Failed to update appointment status.");
     }
-  };
+};
 
   const handleEdit = (appointment) => {
     setSelectedAppointment({
@@ -215,14 +195,25 @@ const VetAppointments = () => {
         // Prepare the request payload
         const updateData = { status };
 
+        // Check if the status is "Completed" to update medical history
+        if (status.toLowerCase() === "completed") {
+          const medicalConcern = selectedAppointment.medical_concern; // Get the medical concern from the selected appointment
+          const petId = selectedAppointment.pet_id?._id; // Get the pet ID from the selected appointment
+      
+          // Update the pet's medical history
+          await axios.put(`${process.env.REACT_APP_API_URL}/api/pets/update/${petId}`, {
+              medical_history: medicalConcern // Append the medical concern
+          });
+        }
+
         if (date) {
-          const updatedDate = new Date(date);
-          if (time) {
-              const [hours, minutes] = time.split(":").map(Number);
-              updatedDate.setHours(hours);
-              updatedDate.setMinutes(minutes);
-          }
-          updateData.date = updatedDate; // Ensure this is a valid date
+            const updatedDate = new Date(date);
+            if (time) {
+                const [hours, minutes] = time.split(":").map(Number);
+                updatedDate.setHours(hours);
+                updatedDate.setMinutes(minutes);
+            }
+            updateData.date = updatedDate; // Ensure this is a valid date
         }
 
         if (time) {
@@ -234,11 +225,11 @@ const VetAppointments = () => {
         }
 
         if (price) {
-          updateData.price = price || ""; // Ensure price is included
-      }
+            updateData.price = price || ""; // Ensure price is included
+        }
 
         // Send the update request to the backend
-        const response = await axios.put(`http://localhost:5000/api/appointments/update/${id}`, updateData);
+        const response = await axios.put(`${process.env.REACT_APP_API_URL}/api/appointments/update/${id}`, updateData);
 
         console.log("🟢 Response from backend:", response.data);
         showToast("success", "Updated", "Appointment updated successfully.");
@@ -249,7 +240,7 @@ const VetAppointments = () => {
         console.error("🔴 Error updating appointment:", error);
         showToast("error", "Error", "Failed to update appointment.");
     }
-};  
+};
 
   const dateTemplate = (rowData) => {
     return new Date(rowData.date).toLocaleString();
@@ -264,36 +255,11 @@ const VetAppointments = () => {
     );
 };
 
-  const actionTemplate = (rowData) => {
+  const actionAppointmentTemplate = (rowData) => {
     return (
       <div className="action-buttons">
         <Button icon="pi pi-pencil" className="edit-btn" onClick={() => handleEdit(rowData)} />
-
-        {rowData.status === "Pending" && (
-          <>
-            <Button icon="pi pi-check" className="accept-btn" onClick={() => updateAppointmentStatus(rowData._id, "Confirmed")} />
-            <Button icon="pi pi-times" className="delete-btn" onClick={() => updateAppointmentStatus(rowData._id, "Cancelled")} />
-          </>
-        )}
-
-        {rowData.status === "Confirmed" && (
-          <>
-            <Button icon="pi pi-check" className="accept-btn" onClick={() => updateAppointmentStatus(rowData._id, "In-progress")} />
-            <Button icon="pi pi-times" className="delete-btn" disabled />
-          </>
-        )}
-        {rowData.status === "In-progress" && (
-          <>
-            <Button icon="pi pi-check" className="accept-btn" onClick={() => updateAppointmentStatus(rowData._id, "Ready-for-pickup")} />
-            <Button icon="pi pi-times" className="delete-btn" disabled />
-          </>
-        )}
-        {rowData.status === "Ready-for-pickup" && (
-          <>
-            <Button icon="pi pi-check" className="accept-btn" onClick={() => updateAppointmentStatus(rowData._id, "Completed")} />
-            <Button icon="pi pi-times" className="delete-btn" disabled />
-          </>
-        )}
+        <Button icon="pi pi-times" className="delete-btn" onClick={() => updateAppointmentStatus(rowData._id, "Cancelled")} />
       </div>
     );
   };
@@ -436,7 +402,7 @@ const VetAppointments = () => {
         <Column field="medical_concern" header="Medical Concern" />
         <Column field="date" header="Appointment Date" body={dateTemplate} />
         <Column field="status" header="Status" body={formatStatus} />
-        <Column header="Actions" body={actionTemplate} />
+        <Column header="Actions" body={actionAppointmentTemplate} />
       </DataTable>
 
       <Dialog
@@ -481,7 +447,7 @@ const VetAppointments = () => {
                   </>
                 )}
                 {(selectedAppointment?.originalStatus === "Ready-for-pickup") && (
-                  <option value="Completed">Completed</option>
+                  <option value="Completed">Completed</option>  
                 )}
               </select>
             </div>

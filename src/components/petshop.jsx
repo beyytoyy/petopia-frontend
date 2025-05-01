@@ -48,7 +48,7 @@ function PetShop() {
         return;
       }
       try {
-        const clinicResponse = await axios.get(`http://localhost:5000/api/clinics/${clinicId}`);
+        const clinicResponse = await axios.get(`${process.env.REACT_APP_API_URL}/api/clinics/${clinicId}`);
         setClinic(clinicResponse.data);
   
         // Extract open and close time from response
@@ -69,7 +69,7 @@ function PetShop() {
           close_time: formatTime(close_time), 
         });
   
-        const servicesResponse = await axios.get(`http://localhost:5000/api/services/clinic/${clinicId}`);
+        const servicesResponse = await axios.get(`${process.env.REACT_APP_API_URL}/api/services/clinic/${clinicId}`);
         setServices(servicesResponse.data);
       } catch (error) {
         console.error("Error fetching clinic or services:", error);
@@ -82,7 +82,7 @@ function PetShop() {
         try {
           const token = localStorage.getItem("token");
           if (token) {
-            const ownerResponse = await axios.get(`http://localhost:5000/api/owners/${ownerId}`, {
+            const ownerResponse = await axios.get(`${process.env.REACT_APP_API_URL}/api/owners/${ownerId}`, {
               headers: { "Authorization": `Bearer ${token}` }
             });
 
@@ -112,7 +112,7 @@ function PetShop() {
       }
     
       try {
-        const response = await axios.get(`http://localhost:5000/api/pets/${ownerId}`, {
+        const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/pets/${ownerId}`, {
           headers: {
             "Authorization": `Bearer ${token}`,
             "Content-Type": "application/json",
@@ -175,7 +175,7 @@ function PetShop() {
   
       console.log("🚀 Sending appointment data:", appointmentData);
   
-      const response = await axios.post("http://localhost:5000/api/appointments/book", appointmentData);
+      const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/appointments/book`, appointmentData);
   
       let appointmentId;
 
@@ -225,7 +225,7 @@ function PetShop() {
   const handleVerifyOTP = async () => {
     setLoading(true);
     try {
-      const response = await axios.post("http://localhost:5000/api/appointments/verify-otp", {
+      const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/appointments/verify-otp`, {
         email,
         otp,
       });

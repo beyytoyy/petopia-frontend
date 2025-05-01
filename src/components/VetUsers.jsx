@@ -45,7 +45,7 @@ const VetUsers = () => {
 
     const fetchUsers = async () => {
         try {
-            const response = await axios.get(`http://localhost:5000/api/users`);
+            const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/users`);
             setUsers(response.data);
         } catch (error) {
             console.error("Error fetching users:", error);
@@ -77,7 +77,7 @@ const VetUsers = () => {
 
     const handleUpdateUser = async () => {
         try {
-            const response = await axios.put(`http://localhost:5000/api/users/update/${selectedUser._id}`, newUserData);
+            const response = await axios.put(`${process.env.REACT_APP_API_URL}/api/users/update/${selectedUser._id}`, newUserData);
             
             toast.current.show({
                 severity: "success",
@@ -127,7 +127,7 @@ const VetUsers = () => {
 
     const handleAddUser  = async () => {
         try {
-            const response = await axios.post(`http://localhost:5000/api/users/register`, newUserData);
+            const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/users/register`, newUserData);
             toast.current.show({
                 severity: "success",
                 summary: "Success",
@@ -148,7 +148,7 @@ const VetUsers = () => {
     const handleDeleteUser = async (userId) => {
         try {
             // Send a POST request with the userId in the request body
-            await axios.delete('http://localhost:5000/api/users/delete', {
+            await axios.delete(`${process.env.REACT_APP_API_URL}/api/users/delete`, {
                 data: { userId },  // Pass the userId in the request body
             });
     

@@ -51,7 +51,7 @@ const VetSchedules = () => {
 
   const fetchOwners = async () => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/appointments/owners/${clinicId}`);
+      const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/appointments/owners/${clinicId}`);
       setOwners(response.data);
     } catch (error) {
       console.error("Error fetching owners:", error);
@@ -68,13 +68,13 @@ const VetSchedules = () => {
     try {
       let response;
       if (role === "admin") {
-        response = await axios.get(`http://localhost:5000/api/appointments/`);
+        response = await axios.get(`${process.env.REACT_APP_API_URL}/api/appointments/`);
       } else if (role === "clinic") {
         if (!clinicId) {
           setError("Clinic ID is not available for this role.");
           return;
         }
-        response = await axios.get(`http://localhost:5000/api/appointments/clinics/${clinicId}`);
+        response = await axios.get(`${process.env.REACT_APP_API_URL}/api/appointments/clinics/${clinicId}`);
       } else {
         setError("Invalid role.");
         return;
@@ -156,7 +156,7 @@ const VetSchedules = () => {
     }
   
     try {
-      const response = await axios.post(`http://localhost:5000/api/appointments/clinic-book`, {
+      const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/appointments/clinic-book`, {
         owner_id: selectedOwnerId._id || selectedOwnerId,
         pet_id: selectedPetId,
         clinic_id: clinicId,

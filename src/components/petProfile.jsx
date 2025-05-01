@@ -50,7 +50,7 @@ export default function PetProfile() {
         if (!token) return;
 
         try {
-            const response = await fetch(`http://localhost:5000/api/pets/${ownerId}`, {
+            const response = await fetch(`${process.env.REACT_APP_API_URL}/api/pets/${ownerId}`, {
                 headers: {
                     "Authorization": `Bearer ${token}`,
                     "Content-Type": "application/json"
@@ -101,7 +101,7 @@ export default function PetProfile() {
         }
     
         try {
-            const response = await fetch("http://localhost:5000/api/pets/register", {
+            const response = await fetch(`${process.env.REACT_APP_API_URL}/api/pets/register`, {
                 method: "POST",
                 headers: { "Authorization": `Bearer ${token}` },
                 body: formData
@@ -138,7 +138,7 @@ export default function PetProfile() {
         }
     
         try {
-            const response = await fetch(`http://localhost:5000/api/pets/update/${pet._id}`, {
+            const response = await fetch(`${process.env.REACT_APP_API_URL}/api/pets/update/${pet._id}`, {
                 method: "PUT",
                 headers: {
                     "Authorization": `Bearer ${token}`,
@@ -174,7 +174,7 @@ export default function PetProfile() {
         if (!token) return;
 
         try {
-            const response = await fetch(`http://localhost:5000/api/pets/delete/${petToDelete._id}`, {
+            const response = await fetch(`${process.env.REACT_APP_API_URL}/api/pets/delete/${petToDelete._id}`, {
                 method: "DELETE",
                 headers: {
                     "Authorization": `Bearer ${token}`,
@@ -201,7 +201,7 @@ export default function PetProfile() {
         formData.append("avatar", file);
 
         try {
-            const response = await fetch(`http://localhost:5000/api/pets/upload-pet-avatar/${petId}`, {
+            const response = await fetch(`${process.env.REACT_APP_API_URL}/api/pets/upload-pet-avatar/${petId}`, {
                 method: "POST",
                 headers: { "Authorization": `Bearer ${token}` },
                 body: formData
@@ -233,7 +233,7 @@ export default function PetProfile() {
                                     pet.avatar && pet.avatar.startsWith("http")
                                         ? pet.avatar
                                         : pet.avatar
-                                        ? `http://localhost:5000${pet.avatar}`
+                                        ? `${process.env.REACT_APP_API_URL}${pet.avatar}`
                                         : "https://cdn-icons-png.flaticon.com/512/847/847969.png"
                                 }
                                 alt="Profile"
@@ -248,6 +248,9 @@ export default function PetProfile() {
                             <p className="text-gray-500">Type: <span className="font-medium">{pet.type}</span></p>
                             <p className="text-gray-500">Gender: <span className="font-medium">{pet.gender}</span></p>
                             <p className="text-gray-500">Age: <span className="font-medium">{pet.age}</span></p>
+                            <p className="text-gray-500">
+                                Medical history: <span className="font-medium">{pet.medical_history.join(', ')}</span>
+                            </p>
                         </div>
                         <div className="action-buttons">
                             <Button icon="pi pi-pencil" className="p-button-rounded p-button-text p-button-info" onClick={() => openEditPetDialog(pet)} />
@@ -273,7 +276,7 @@ export default function PetProfile() {
                                     src={imagePreview || (pet.avatar && pet.avatar.startsWith("http")
                                         ? pet.avatar
                                         : pet.avatar
-                                        ? `http://localhost:5000${pet.avatar}`
+                                        ? `${process.env.REACT_APP_API_URL}${pet.avatar}`
                                         : "https://cdn-icons-png.flaticon.com/512/847/847969.png")}
                                     alt="Profile"
                                     className="dialog-pet-avatar"

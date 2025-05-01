@@ -58,9 +58,9 @@ const VetDashboard = () => {
             try {
                 let response;
                 if (role === "admin") {
-                    response = await axios.get('http://localhost:5000/api/appointments');
+                    response = await axios.get(`${process.env.REACT_APP_API_URL}/api/appointments`);
                 } else if (role === "clinic" && clinicId) {
-                    response = await axios.get(`http://localhost:5000/api/appointments/clinics/${clinicId}`);
+                    response = await axios.get(`${process.env.REACT_APP_API_URL}/api/appointments/clinics/${clinicId}`);
                 } else {
                     console.warn("❌ clinicId is null, skipping API call.");
                     return;
@@ -192,7 +192,7 @@ const VetDashboard = () => {
                                                 patient.pet_id?.avatar && patient.pet_id?.avatar.startsWith("http")
                                                     ? patient.pet_id?.avatar
                                                     : patient.pet_id?.avatar
-                                                    ? `http://localhost:5000${patient.pet_id?.avatar}`
+                                                    ? `${process.env.REACT_APP_API_URL}${patient.pet_id?.avatar}`
                                                     : "https://cdn-icons-png.flaticon.com/512/847/847969.png"
                                             } alt={patient.pet_id?.name} />
                                         </div>
@@ -224,7 +224,7 @@ const VetDashboard = () => {
                                             nextPatient.pet_id?.avatar && nextPatient.pet_id?.avatar.startsWith("http")
                                                 ? nextPatient.pet_id?.avatar
                                                 : nextPatient.pet_id?.avatar
-                                                ? `http://localhost:5000${nextPatient.pet_id?.avatar}`
+                                                ? `${process.env.REACT_APP_API_URL}${nextPatient.pet_id?.avatar}`
                                                 : "https://cdn-icons-png.flaticon.com/512/847/847969.png"
                                         } alt={nextPatient.pet_id?.name} />
                                     </div>

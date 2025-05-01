@@ -21,7 +21,7 @@ const Login = () => {
     setError("");
   
     try {
-      const response = await axios.post(`http://localhost:5000/api/owners/login`, {
+      const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/owners/login`, {
         email: username,
         password: password,
       });
@@ -60,7 +60,7 @@ const Login = () => {
 
   // ✅ Handle Google login
   const handleGoogleLogin = () => {
-    window.open("http://localhost:5000/auth/google", "_self");
+    window.open(`${process.env.REACT_APP_API_URL}/auth/google`, "_self");
   };
 
   useEffect(() => {

@@ -30,7 +30,7 @@ const ServiceManagement = () => {
   useEffect(() => {
     const fetchClinics = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/api/clinics");
+        const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/clinics`);
         setClinics(response.data.clinics);
         setFilteredClinics(response.data.clinics);
       } catch (error) {
@@ -66,17 +66,17 @@ const ServiceManagement = () => {
     try {
       if (selectedService) {
         // Update existing service
-        await axios.put(`http://localhost:5000/api/services/update/${selectedService._id}`, serviceForm);
+        await axios.put(`${process.env.REACT_APP_API_URL}/api/services/update/${selectedService._id}`, serviceForm);
       } else {
         // Add new service
-        await axios.post(`http://localhost:5000/api/services/add`, { ...serviceForm, clinic_id: selectedClinic._id });
+        await axios.post(`${process.env.REACT_APP_API_URL}/api/services/add`, { ...serviceForm, clinic_id: selectedClinic._id });
       }
       toast.current.show({ severity: "success", summary: "Success", detail: "Service saved successfully" });
       setIsDialogVisible(false);
       setServiceForm({ name: "", description: "", estimated_duration: "", rate: "" });
 
       // Refresh services
-      const updatedServices = await axios.get(`http://localhost:5000/api/services/clinic/${selectedClinic._id}`);
+      const updatedServices = await axios.get(`${process.env.REACT_APP_API_URL}/api/services/clinic/${selectedClinic._id}`);
       setServices(updatedServices.data.services);
     } catch (error) {
       console.error("Error saving service:", error);
@@ -92,7 +92,7 @@ const ServiceManagement = () => {
 
   const handleDeleteService = async (serviceId) => {
     try {
-      await axios.delete(`http://localhost:5000/api/services/delete/${serviceId}`);
+      await axios.delete(`${process.env.REACT_APP_API_URL}/api/services/delete/${serviceId}`);
       toast.current.show({ severity: "success", summary: "Success", detail: "Service deleted successfully" });
       setServices(services.filter(service => service._id !== serviceId));
     } catch (error) {
@@ -104,7 +104,7 @@ const ServiceManagement = () => {
   const clinicLogoTemplate = (rowData) => {
     return (
       <img
-        src={`http://localhost:5000${rowData.logo}`}
+        src={`${process.env.REACT_APP_API_URL}${rowData.logo}`}
         alt={rowData.name}
         className="logo-clinic"
         style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '50%' }}
