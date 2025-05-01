@@ -118,7 +118,7 @@
 
     const fetchAllClinics = async () => {
       try {
-        const res = await axios.get("${process.env.REACT_APP_API_URL}/api/clinics");
+        const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/clinics`);
         const clinics = Array.isArray(res.data.clinics) ? res.data.clinics : [];
         setAllClinics(clinics);
       } catch (err) {

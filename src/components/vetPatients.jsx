@@ -9,7 +9,7 @@ import { FilterIcon, SearchIcon } from 'lucide-react';
 import { Dropdown } from "primereact/dropdown";
 import { useAuth } from "./utils/auth";
 import axios from "axios";
-import "./css/VetAppointments.css";
+import "../components/css/vetPatients.css";
 
 const PatientManagement = () => {
   const { role, clinicId } = useAuth();
@@ -218,7 +218,7 @@ const PatientManagement = () => {
       </div>
       <span className="datatable-line"></span>
 
-      <div className="flex-container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+      <div className="flex-container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap'}}>
         <div style={{ position: "relative", flexGrow: 1, minWidth: "250px" }}>
           <SearchIcon size={20} style={{ 
               position: "absolute", 
@@ -239,7 +239,7 @@ const PatientManagement = () => {
           />
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+        <div className="filter-group">
           <div style={{ display: "flex", alignItems: "center" }}>
             <FilterIcon size={24} />
           </div>

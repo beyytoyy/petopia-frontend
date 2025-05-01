@@ -110,10 +110,14 @@ function ShopProfile() {
                 )}
               </div>
               {shop.services.length > 5 && (
-                <Button onClick={() => setShowMore(!showMore)} className="see-more-button">
+                  <Button 
+                  onClick={() => setShowMore(!showMore)} 
+                  className="see-more-button p-button-sm p-button-text" 
+                  style={{ fontSize: "1.2rem" }}
+                >
                   {showMore ? "See Less" : "See More"}
                 </Button>
-              )}
+                )}
             </div>
           </div>
 
